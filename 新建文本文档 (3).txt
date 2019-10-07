@@ -1,0 +1,74 @@
+1.用bs4爬取QQ音乐：
+为什莫不从返回的源代码里获取播放的url,因为我们从电脑上查看的是经过js渲染的，网页源代码不含有播放的url.
+首先看一下歌曲播放的url,用google 的network抓包
+
+看到了meida文件，并且文件最大，查看url
+
+
+
+确定为播放的url。但我们刷新过后发现url的guid和vkey一直在变。所以一定有某个文件生成了参数guid和vkey;
+
+在歌单页面找到了songmid,和songname,所以播放页面的guid是由歌单界面请求获得的+“C400”
+
+在播放页面找到了vkey
+回过头看songmid的请求url
+Request URL: 
+https://c.y.qq.com/soso/fcgi-bin/client_search_cp?ct=24&qqmusic_ver=1298&new_json=1&remoteplace=txt.yqq.song&searchid=70928661930345971&t=0&aggr=1&cr=1&catZhida=1&lossless=0&flag_qc=0&p=1&n=10&w=%E5%BC%A0%E5%AD%A6%E5%8F%8B&g_tk=5381&loginUin=2430829854&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0
+
+通过控制变量法精简url为
+https://c.y.qq.com/soso/fcgi-bin/client_search_cp?&p=1&n=10&w=张学友&format=json
+上文w=...为url编码。与“张学友”等价。
+https://u.y.qq.com/cgi-bin/musicu.fcg?&data={“req”:{“param”:{“guid”:“123456”}},“req_0”:{“module”:“vkey.GetVkeyServer”,“method”:“CgiGetVkey”,“param”:{“guid”:“123456”,“songmid”:[“0033oxAn0LGrQy”],“uin”:“123456”}},“comm”:{“uin”:123456}}
+这里的guid和uin可以随便填写
+
+2.字体反爬：猫眼电影
+在访问猫眼电影的网站时会出现
+
+
+乱码的情况发现更改编码方式还是显示不出来，这是因为该网页采用了字体加密，为什莫网页上显示正常，是因为请求中携带着字体的对应关系，相当与映射。
+
+在源代码中我们发现字体有独立的编码，这是应为自定义字体在utf-8编码下无法显示。
+所以我们查找字体文件，找到对应关系，建立映射。
+
+
+下载文中的.woff字体文件，用http://fontstore.baidu.com/static/editor/index.html打开
+
+我们发现uni后的字符串与html源码（上方）的编码一致。
+我们再将它保存为xml文件打开，查看文件信息。
+（需要下载fontTools）
+from fontTools.ttLib import TTFont
+font=TTFont('01.ttf')  
+font.saveXML('01.xml')   
+发现在glyf标签下的
+
+可以联想到应该是描绘字体形状的。虽然刷新页面，源代码里的字体编码会变，但字体样式的内容不会变。我们只需比对两者的glyf就可以得知字体内容。
+实现步骤：先在本地保存字体文件01.ttf，并手动确认编码和数字的对应关系，保存到字典中。然后重新访问网页的时候，把网页中新的字体文件也下载保存到本地02.ttf。对于02中的编码uni2，先获取uni2的对象obj2，与01中的每一个对象注逐一对比，直到找到相同的对象obj1，再根据obj1的编码，在字典中找到对应的数字。
+3.有道翻译
+打开有道翻译的url http://fanyi.youdao.com/
+在翻译框里输入内容，抓包查看请求
+
+我们看到在translate开头的这个文件里有一个post请求，查看他的from data
+
+决定用requests.post()请求获取翻译内容，但无法返回数据，报错。
+我们刷新页面，输入翻译发现两次的参数不完全一致，对比得知，salt，和sign值不一致。
+
+
+
+于是觉得是有一个js文件生成了salt和sign.
+
+打开上边的文件，
+
+我们在这个文件里找到了salt，sign
+我们在network预览使得代码格式化输出
+
+寻找salt,sign的生成过程
+
+这是salt和sign的加密过程
+r = str(int(time.time()*1000))
+    salt = r + str(int(random.random()*10))
+ 
+    #生成sign
+    value = "fanyideskweb" + keyword + salt + "n%A-rKaT5fb[Gy?;N5@Tj"
+    md5_str = getMd5(value)
+然后在请求就可以了
+

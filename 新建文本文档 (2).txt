@@ -1,0 +1,406 @@
+一.python的内置库——urllib库
+1.urllib.request(发送和获取请求)：
+（1）urllib.request.urlopen(url,data=None,[timeout]*   ...)
+  url:需要打开的网页。
+  data:post请求提交的数据。
+  timeout:设置网站访问的超时时间。
+  返回response对象，主要包括的方法有 read()("获取网页源代码"),readinto(),getheader()（“获取单个头部信息”）,getheaders(获取头部信息),fileno()
+response.status(可以获取结果的状态码)
+
+ （2）urllib.request.Request(url,headers,User-Agent,origin_req_host(指的是请求方的IP地址或host名，method（http的请求方式），unverifiable(是否证书验证)))
+另外还可以通过add_header(方法加入头部信息)
+
+   (3) urllib.request.ProxyHandler()添加代理
+key:是协议类型，value：是代理链接。
+使用build_opener(proxey)构建一种新的打开方式（因为urlopen只能进行一些基本的操作），可以处理一些高级操作。
+HTTPDefaultErrorHandler 用于处理HTTP响应错误，错误都会抛出 HTTPError 类型的异常。
+HTTPRedirectHandler 用于处理重定向。
+HTTPCookieProcessor 用于处理 Cookie  。
+ProxyHandler 用于设置代理，默认代理为空。
+HTTPPasswordMgr 用于管理密码，它维护了用户名密码的表。
+HTTPBasicAuthHandler 用于管理认证
+  （4）http.cookiejar.CookieJar(), 获取cookie
+import http.cookiejar, urllib.request
+cookie = http.cookiejar.CookieJar()
+handler = urllib.request.HTTPCookieProcessor(cookie)
+opener = urllib.request.build_opener(handler)
+response = opener.open('http://www.baidu.com')
+
+
+
+
+
+cookie = http.cookiejar.MozillaCookieJar(filename)
+cookie.save()
+保存cookie文件。
+
+
+
+
+cookie = http.cookiejar.LWPCookieJar()
+cookie.load('cookie.txt', ignore_discard=True, ignore_expires=True)
+
+
+ 读取cookie文件。
+2.requests库（非内置库要安装）
+
+
+request.get()中的kwargs: 控制访问的参数，均为可选项
+params : 字典或字节序列，作为参数增加到url中
+data : 字典、字节序列或文件对象，作为Request的内容 json : JSON格式的数据，作为Request的内容
+headers : 字典，HTTP定制头
+cookies : 字典或CookieJar，Request中的cookie
+auth : 元组，支持HTTP认证功能
+files : 字典类型，传输文件
+timeout : 设定超时时间，秒为单位
+proxies : 字典类型，设定访问代理服务器，可以增加登录认证
+allow_redirects : True/False，默认为True，重定向开关
+stream : True/False，默认为True，获取内容立即下载开关
+verify : True/False，默认为True，认证SSL证书开关
+cert : 本地SSL证书路径
+url: 拟更新页面的url链接
+data: 字典、字节序列或文件，Request的内容
+json: JSON格式的数据，Request的内容
+返回response对象 r.status_code返回状态码，r.headers(返回头部信息)，r.encoding(返回从响应头猜测的编码格式)r.text中默认为r.encoding，r.apparent(从内容中分析)
+r.conten(返回二进制形式)用于图片，音乐等格式
+3.bs4库：（让html格式化输出，转化为树形结构）
+Tag： 和html中的Tag基本没有区别，可以简单上手使用
+NavigableString： 被包裹在tag内的字符串
+BeautifulSoup： 表示一个文档的全部内容，大部分的时候可以吧他看做一个tag对象，支持遍历文档树和搜索文档树方法。
+Comment：这是一个特殊的NavigableSting对象，在出现在html文档中时，会以特殊的格式输出，比如注释类型。
+soup.head输出头部信息，soup.tltle输出title标签
+另外通过tag的 .children生成器，可以对tag的子节点进行循环：
+for child in title_tag.children:
+    print(child)
+这种方式只能遍历出子节点。如何遍历出子孙节点呢？
+子孙节点：比如 head.contents (将子节点以列表输出)的子节点是<title>The Dormouse's story</title>,这里 title本身也有子节点：‘The Dormouse‘s story’ 。这里的‘The Dormouse‘s story’也叫作head的子孙节点
+
+for child in head_tag.descendants:
+    print(child)
+soup.tag(获取标签（第一个符合要求）),soup.tag["attribute"]（获取标签下的属性）等价于soup.get("attribute")
+如果一个标签里面没有标签了，那么 .string 就会返回标签里面的内容。如果标签里面只有唯一的一个标签了，那么 .string 也会返回最里面的内容。
+
+.strings
+获取多个内容，不过需要遍历获取
+
+.stripped_strings(与.strings唯一不同的是会去除掉多余空格)
+
+.parent父节点，.parents全部父节点
+
+.next_sibling .previous_sibling 属性
+兄弟节点可以理解为和本节点处在统一级的节点，.next_sibling 属性获取了该节点的下一个兄弟节点，.previous_sibling 则与之相反，如果节点不存在，则返回 None
+
+注意：实际文档中的tag的 .next_sibling 和 .previous_sibling 属性通常是字符串或空白，因为空白或者换行也可以被视作一个节点，所以得到的结果可能是空白或者换行 
+全部    加s
+
+find_all方法（）
+
+find_all() 方法搜索当前tag的所有tag子节点,并判断是否符合过滤器的条件
+1）name 参数
+name 参数可以查找所有名字为 name 的tag,字符串对象会被自动忽略掉
+A.传字符串
+最简单的过滤器是字符串.在搜索方法中传入一个字符串参数,Beautiful Soup会查找与字符串完整匹配的内容,下面的例子用于查找文档中所有的<b>标签
+soup.find_all('b')
+# [<b>The Dormouse's story</b>]
+ 
+print soup.find_all('a')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>, <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>, <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>]
+
+B.传正则表达式
+如果传入正则表达式作为参数,Beautiful Soup会通过正则表达式的 match() 来匹配内容.下面例子中找出所有以b开头的标签,这表示<body>和<b>标签都应该被找到
+ 
+import re
+for tag in soup.find_all(re.compile("^b")):
+  print(tag.name)
+# body
+# b
+
+C.传列表
+如果传入列表参数,Beautiful Soup会将与列表中任一元素匹配的内容返回.下面代码找到文档中所有<a>标签和<b>标签
+ 
+soup.find_all(["a", "b"])
+# [<b>The Dormouse's story</b>,
+# <a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>,
+# <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>,
+# <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>]
+
+D.传 True
+True 可以匹配任何值,下面代码查找到所有的tag,但是不会返回字符串节点
+ 
+for tag in soup.find_all(True):
+  print(tag.name)
+# html
+# head
+# title
+# body
+# p
+# b
+# p
+# a
+# a
+
+E.传方法
+如果没有合适过滤器,那么还可以定义一个方法,方法只接受一个元素参数 [4] ,如果这个方法返回 True 表示当前元素匹配并且被找到,如果不是则反回 False
+下面方法校验了当前元素,如果包含 class 属性却不包含 id 属性,那么将返回 True:
+ 
+def has_class_but_no_id(tag):
+  return tag.has_attr('class') and not tag.has_attr('id')
+
+将这个方法作为参数传入 find_all() 方法,将得到所有<p>标签:
+ 
+soup.find_all(has_class_but_no_id)
+# [<p class="title"><b>The Dormouse's story</b></p>,
+# <p class="story">Once upon a time there were...</p>,
+# <p class="story">...</p>]
+
+2）keyword 参数
+    注意：如果一个指定名字的参数不是搜索内置的参数名,搜索时会把该参数当作指定名字tag的属性来搜索,如果包含一个名字为 id 的参数,Beautiful Soup会搜索每个tag的”id”属性
+ 
+soup.find_all(id='link2')
+# [<a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>]
+
+如果传入 href 参数,Beautiful Soup会搜索每个tag的”href”属性
+ 
+soup.find_all(href=re.compile("elsie"))
+# [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>]
+
+使用多个指定名字的参数可以同时过滤tag的多个属性
+ 
+soup.find_all(href=re.compile("elsie"), id='link1')
+# [<a class="sister" href="http://example.com/elsie" id="link1">three</a>]
+
+在这里我们想用 class 过滤，不过 class 是 python 的关键词，这怎么办？加个下划线就可以
+ 
+soup.find_all("a", class_="sister")
+# [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>,
+# <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>,
+# <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>]
+
+有些tag属性在搜索不能使用,比如HTML5中的 data-* 属性
+ 
+soup.find_all("a", class_="sister")
+# [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>,
+# <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>,
+# <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>]
+
+但是可以通过 find_all() 方法的 attrs 参数定义一个字典参数来搜索包含特殊属性的tag
+ 
+data_soup.find_all(attrs={"data-foo": "value"})
+# [<div data-foo="value">foo!</div>]
+
+3）text 参数
+通过 text 参数可以搜搜文档中的字符串内容.与 name 参数的可选值一样, text 参数接受 字符串 , 正则表达式 , 列表, True
+ 
+soup.find_all(text="Elsie")
+# [u'Elsie']
+ 
+soup.find_all(text=["Tillie", "Elsie", "Lacie"])
+# [u'Elsie', u'Lacie', u'Tillie']
+ 
+soup.find_all(text=re.compile("Dormouse"))
+[u"The Dormouse's story", u"The Dormouse's story"]
+
+4）limit 参数
+find_all() 方法返回全部的搜索结构,如果文档树很大那么搜索会很慢.如果我们不需要全部结果,可以使用 limit 参数限制返回结果的数量.效果与SQL中的limit关键字类似,当搜索到的结果数量达到 limit 的限制时,就停止搜索返回结果.
+文档树中有3个tag符合搜索条件,但结果只返回了2个,因为我们限制了返回数量
+ 
+soup.find_all("a", limit=2)
+# [<a class="sister" href="http://example.com/elsie" id="link1">Elsie</a>,
+# <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>]
+
+5）recursive 参数
+调用tag的 find_all() 方法时,Beautiful Soup会检索当前tag的所有子孙节点,如果只想搜索tag的直接子节点,可以使用参数 recursive=False .
+一段简单的文档:
+复制代码代码如下:
+ 
+<html>
+ <head>
+  <title>
+   The Dormouse's story
+  </title>
+ </head>
+...
+是否使用 recursive 参数的搜索结果:
+ 
+soup.html.find_all("title")
+# [<title>The Dormouse's story</title>]
+ 
+soup.html.find_all("title", recursive=False)
+# []
+
+（2）find( name , attrs , recursive , text , **kwargs )
+它与 find_all() 方法唯一的区别是 find_all() 方法的返回结果是值包含一个元素的列表,而 find() 方法直接返回结果
+（3）find_parents() find_parent()
+find_all() 和 find() 只搜索当前节点的所有子节点,孙子节点等. find_parents() 和 find_parent() 用来搜索当前节点的父辈节点,搜索方法与普通tag的搜索方法相同,搜索文档搜索文档包含的内容
+（4）find_next_siblings() find_next_sibling()
+这2个方法通过 .next_siblings 属性对当 tag 的所有后面解析的兄弟 tag 节点进行迭代, find_next_siblings() 方法返回所有符合条件的后面的兄弟节点,find_next_sibling() 只返回符合条件的后面的第一个tag节点
+（5）find_previous_siblings() find_previous_sibling()
+这2个方法通过 .previous_siblings 属性对当前 tag 的前面解析的兄弟 tag 节点进行迭代, find_previous_siblings() 方法返回所有符合条件的前面的兄弟节点, find_previous_sibling() 方法返回第一个符合条件的前面的兄弟节点
+（6）find_all_next() find_next()
+这2个方法通过 .next_elements 属性对当前 tag 的之后的 tag 和字符串进行迭代, find_all_next() 方法返回所有符合条件的节点, find_next() 方法返回第一个符合条件的节点
+（7）find_all_previous() 和 find_previous()
+这2个方法通过 .previous_elements 属性对当前节点前面的 tag 和字符串进行迭代, find_all_previous() 方法返回所有符合条件的节点, find_previous()方法返回第一个符合条件的节点
+    注：以上（2）（3）（4）（5）（6）（7）方法参数用法与 find_all() 完全相同，原理均类似，在此不再赘述。
+8.CSS选择器
+我们在写 CSS 时，标签名不加任何修饰，类名前加点，id名前加 #，在这里我们也可以利用类似的方法来筛选元素，用到的方法是 soup.select()，返回类型是 list
+（1）通过标签名查找
+ 
+print soup.select('title') 
+#[<title>The Dormouse's story</title>]
+ 
+print soup.select('a')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>, <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>, <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>]
+ 
+print soup.select('b')
+#[<b>The Dormouse's story</b>]
+
+（2）通过类名查找
+ 
+print soup.select('.sister')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>, <a class="sister" href="http://example.com/lacie" id="link2">Lacie</a>, <a class="sister" href="http://example.com/tillie" id="link3">Tillie</a>]
+
+（3）通过 id 名查找
+ 
+print soup.select('#link1')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>]
+
+（4）组合查找
+组合查找即和写 class 文件时，标签名与类名、id名进行的组合原理是一样的，例如查找 a标签中，id 等于 link1的内容，二者需要用空格分开
+ 
+print soup.select('a #link1')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>]
+
+直接子标签查找
+ 
+print soup.select("head > title")
+#[<title>The Dormouse's story</title>]
+
+（5）属性查找
+查找时还可以加入属性元素，属性需要用中括号括起来，注意属性和标签属于同一节点，所以中间不能加空格，否则会无法匹配到。
+ 
+print soup.select("head > title")
+#[<title>The Dormouse's story</title>]
+ 
+print soup.select('a[href="http://example.com/elsie"]')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>]
+
+同样，属性仍然可以与上述查找方式组合，不在同一节点的空格隔开，同一节点的不加空格
+ 
+print soup.select('a a[href="http://example.com/elsie"]')
+#[<a class="sister" href="http://example.com/elsie" id="link1"><!-- Elsie --></a>]
+
+
+Scrapy框架结构:
+首先来一张框架整体的图：
+
+
+从图中我们可以清楚的看到，整个框架一共分为五个部分：
+
+SPIDERS
+ITEM PIPELINES
+DOWNLOADER
+SCHEDULER
+ENGIINE
+
+
+这五个部分互相协作，共同完成了整个爬虫项目的工作。下面我们来一个一个介绍。
+SPIDERS:
+Spiders这个模块就是整个爬虫项目中需要我们手动实现的核心部分，就是类似我们之前写的get_content函数部分，最主要的功能是 解析网页内容、产生爬取项、产生额外的爬去请求。
+ITEM PIPELINES：
+这个模块也是需要我们手动实现的，他的主要功能是将我们爬取筛选完毕的数据写入文本，数据库等等。总之就是一个“本地化”的过程。
+DOWNLOADER：
+这个模块，是Scrapy帮我们做好的，不需要我们自己编写，直接拿来用就行，其主要功能就是从网上获取网页内容，类似于我们写的get_html函数，当然，比我们自己写的这个简单的函数要强大很多
+SCHEDULER：
+这个模块对所有的爬取请求，进行调度管理，同样也是不需要我们写的模块。通过简单的配置就能达到更加多线程，并发处理等等强大功能。
+ENGIINE
+这个模块相当于整个框架的控制中心，他控制着所有模块的数据流交换，并根据不同的条件出发相对应的事件，同样，这个模块也是不需要我们编写的。
+
+Scrapy框架的数据流动：
+先上一张图：
+
+
+说了各个模块的作用，那么整个项目跑起来的时候，数据到底是怎么运作的呢？让我来详细说明：
+Engine从Spider处获得爬取请求(request)
+Engine将爬取请求转发给Scheduler，调度指挥进行下一步
+Engine从Scheduler出获得下一个要爬取的请求
+Engine将爬取请求通过中间件发给Downloader
+爬取网页后后，downloader返回一个Response给engine
+Engine将受到的Response返回给spider处理
+Spider处理响应后，产生爬取项和新的请求给engine
+Engine将爬取项发送给ITEM PIPELINE（写出数据）
+Engine将会爬取请求再次发给Scheduler进行调度（下一个周期的爬取）
+cmd中用scrapy startproject myscrapy创建文件
+items.py爬虫要爬取的变量信息。xxx=Filed()
+
+在spider.py中创建文件，之后我们要写的爬虫主体代码就在此编写，可以看到生成的文件中，有一个 FirstSpider 类，继承着 scrapy.Spider
+
+name 是爬虫名，之后运行爬虫的时候，就要用到这个 name
+allowed_domains 包含了spider允许爬取的域名(domain)的列表
+start_urls 初始URL元祖/列表
+parse 方法，当请求url返回网页没有指定回调函数时，默认的Request对象回调函数。用来处理网页返回的response，以及生成Item或者Request对象
+
+pipelines.py
+收集items中的数据，下载保存。
+settings.py 配置文件，配置请求，下载速度等
+https://blog.csdn.net/fenglei0415/article/details/80438110
+xpath:实例
+在下面的表格中，我们已列出了一些路径表达式以及表达式的结果：
+
+路径表达式	结果
+bookstore	选取 bookstore 元素的所有子节点。
+/bookstore	选取根元素 bookstore。注释：假如路径起始于正斜杠( / )，则此路径始终代表到某元素的绝对路径！
+bookstore/book	选取属于 bookstore 的子元素的所有 book 元素。
+//book	选取所有 book 子元素，而不管它们在文档中的位置。
+bookstore//book	选择属于 bookstore 元素的后代的所有 book 元素，而不管它们位于
+//@lang	选取名为 lang 的所有属性。
+谓语（Predicates）
+谓语用来查找某个特定的节点或者包含某个指定的值的节点。
+谓语被嵌在方括号中。
+
+实例
+在下面的表格中，我们列出了带有谓语的一些路径表达式，以及表达式的结果：
+
+路径表达式	结果
+/bookstore/book[1]	选取属于 bookstore 子元素的第一个 book 元素。
+/bookstore/book[last()]	选取属于 bookstore 子元素的最后一个 book 元素。
+/bookstore/book[last()-1]	选取属于 bookstore 子元素的倒数第二个 book 元素。
+/bookstore/book[position()< 3 ]	选取最前面的两个属于 bookstore 元素的子元素的 book 元素。
+//title[@lang]	选取所有拥有名为 lang 的属性的 title 元素。
+//title[@lang=’eng’]	选取所有 title 元素，且这些元素拥有值为 eng 的 lang 属性。
+/bookstore/book[price>35.00]	选取 bookstore 元素的所有 book 元素，且其中的 price 元素的值须大于 35.00。
+/bookstore/book[price>35.00]/title	选取 bookstore 元素中的 book 元素的所有 title 元素，且其中的 price 元素的值须大于 35.00。
+选取未知节点
+XPath 通配符可用来选取未知的 XML 元素。
+
+通配符	描述
+*	匹配任何元素节点。
+@*	匹配任何属性节点。
+node()	匹配任何类型的节点。
+实例
+在下面的表格中，我们列出了一些路径表达式，以及这些表达式的结果：
+
+路径表达式	结果
+/bookstore/*	选取 bookstore 元素的所有子元素。
+//*	选取文档中的所有元素。
+//title[@*]	选取所有带有属性的 title 元素。
+选取若干路径
+通过在路径表达式中使用“|”运算符，您可以选取若干个路径。
+实例
+在下面的表格中，我们列出了一些路径表达式，以及这些表达式的结果，由于博客书写原因，在表中我把“|”换成了“~”：
+
+路径表达式	结果
+//book/title ~ //book/price	选取 book 元素的所有 title 和 price 元素。
+//title ~ //price	选取文档中的所有 title 和 price 元素。
+/bookstore/book/title ~ //price	选取属于 bookstore 元素的 book 元素的所有 title 元素，以及文档中所有的 price 元素
+https://mtyjkh.blog.csdn.net/article/details/80777765?from=singlemessage
+
+selenium
+https://blog.csdn.net/z714405489/article/details/83280894?from=singlemessage
+
+
+AJAX是一种用于创建快速动态网页的技术。通过在后台与服务器进行少量数据交换，AJAX可以使网页实现异步更新。这意味着可以在不重新加载整个网页的情况下，对网页的某部分进行更新.
+可以使用selenium的显示等待，等待元素加载完毕。
+在批量下载漫画时，会遇到漫画需要下拉触发，获取新的漫画内容，可以使用
+browser.execute_script('window.scrollTo(0, document.body.scrollHeight)') #下拉到网页的最下端
+执行js代码。
+几种反爬机制1.user-agent2.ip(大量访问会封ip)3.js脚本4.robots.txt
